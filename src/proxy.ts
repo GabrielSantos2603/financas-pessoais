@@ -1,10 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { env } from "@/lib/env";
+import { isDemo } from "@/lib/demo";
 import { NextResponse, type NextRequest } from "next/server";
 
 const PUBLIC_PATHS = ["/login", "/auth"];
 
 export async function proxy(request: NextRequest) {
+  if (isDemo) return NextResponse.next(); // modo demonstração: sem login
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -41,5 +43,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|icon.svg|.*\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|icon.svg|apple-icon|icons/|.*\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)"],
 };
