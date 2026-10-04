@@ -1,26 +1,98 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #f6f7fb;
+  --surface: #ffffff;
+  --surface-2: #f0f2f8;
+  --fg: #0f172a;
+  --muted: #64748b;
+  --border: #e4e7ef;
+  --brand: #4f46e5;
+  --brand-fg: #ffffff;
+  --brand-soft: #eef0ff;
+  --income: #059669;
+  --income-soft: #e6f7f0;
+  --expense: #e11d48;
+  --expense-soft: #ffeaee;
+  --warn: #d97706;
+  --warn-soft: #fff4e0;
+  color-scheme: light;
+}
+.dark {
+  --bg: #0b0f1a;
+  --surface: #131929;
+  --surface-2: #1b2236;
+  --fg: #e8ecf5;
+  --muted: #94a3b8;
+  --border: #252d45;
+  --brand: #818cf8;
+  --brand-fg: #0b0f1a;
+  --brand-soft: #1e2347;
+  --income: #34d399;
+  --income-soft: #10281f;
+  --expense: #fb7185;
+  --expense-soft: #301520;
+  --warn: #fbbf24;
+  --warn-soft: #30230c;
+  color-scheme: dark;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-brand: var(--brand);
+  --color-brand-fg: var(--brand-fg);
+  --color-brand-soft: var(--brand-soft);
+  --color-income: var(--income);
+  --color-income-soft: var(--income-soft);
+  --color-expense: var(--expense);
+  --color-expense-soft: var(--expense-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+html { -webkit-tap-highlight-color: transparent; }
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  overscroll-behavior-y: none;
 }
+.tnum { font-variant-numeric: tabular-nums; }
+
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes sheet-up { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes sheet-in { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes shimmer { 100% { transform: translateX(100%); } }
+
+/* Diálogo nativo (<dialog>) como bottom-sheet no mobile e modal no desktop */
+dialog.sheet {
+  margin: auto auto 0 auto;
+  width: 100%;
+  max-width: 100%;
+  max-height: 92dvh;
+  border: 0;
+  padding: 0;
+  background: var(--surface);
+  color: var(--fg);
+  border-radius: 1.5rem 1.5rem 0 0;
+  overflow: hidden;
+  animation: sheet-up .25s cubic-bezier(.2,.8,.2,1);
+}
+dialog.sheet::backdrop { background: rgb(2 6 23 / .55); backdrop-filter: blur(2px); animation: fade .2s; }
+@media (min-width: 768px) {
+  dialog.sheet { margin: auto; max-width: var(--sheet-w, 32rem); border-radius: 1.5rem; animation: sheet-in .2s ease-out; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+.safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 0px); }
