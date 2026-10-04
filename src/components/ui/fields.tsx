@@ -20,9 +20,23 @@ export function Field({ label, hint, children, className }: { label: string; hin
 }
 
 /** Campo de dinheiro em CENTAVOS (value/onChange trabalham com inteiros). */
-export function MoneyInput({ value, onChange, large, id, autoFocus }: {
+export function MoneyInput({ value, onChange, large, hero, id, autoFocus }: {
   value: Cents; onChange: (v: Cents) => void; large?: boolean; id?: string; autoFocus?: boolean;
+  /** valor gigante, sem caixa, para usar sobre um fundo colorido (cabeçalho do lançamento) */
+  hero?: boolean;
 }) {
+  if (hero) {
+    return (
+      <div className="flex items-baseline gap-2 text-white">
+        <span className="text-2xl font-semibold opacity-80">R$</span>
+        <input
+          id={id} autoFocus={autoFocus} inputMode="numeric" aria-label="Valor"
+          value={formatCentsInput(value)} onChange={(e) => onChange(parseCents(e.target.value))} onFocus={(e) => e.currentTarget.select()}
+          className="tnum w-full min-w-0 border-0 bg-transparent p-0 text-[44px] font-bold leading-tight tracking-tight text-white outline-none placeholder:text-white/50 md:text-5xl"
+        />
+      </div>
+    );
+  }
   return (
     <div className="relative">
       <span className={cn("pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 font-medium text-muted", large ? "text-xl" : "text-sm")}>R$</span>

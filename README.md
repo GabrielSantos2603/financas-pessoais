@@ -4,12 +4,14 @@ Controle financeiro pessoal / do casal. Next.js 16 (App Router) + Supabase + Tai
 
 ## Funcionalidades
 
-- **Visão geral**: sobra prevista, em caixa agora, receitas/despesas/guardado com progresso, pendentes do mês, gastos por categoria, últimos 6 meses, despesas por pessoa, parcelas em aberto.
-- **Lançamentos**: navegação por mês, busca, filtros (tipo, status, pessoa, categoria), marcar pago/recebido com 1 toque (com "desfazer"), edição rápida.
+- **Visão geral**: sobra prevista com a composição do mês (já saiu / a pagar / sobra), comparação com o mês anterior, avisos (contas atrasadas, orçamento estourado), a pagar e receber, para onde foi o dinheiro, últimos 6 meses, orçamento, despesas por pessoa e parcelas em aberto.
+- **Lançamentos**: navegação por mês (com seletor de mês/ano), busca, filtros (tipo, status, pessoa, categoria), **deslizar para a direita para marcar como pago**, marcar com 1 toque (com "desfazer"), edição rápida. Formulário colorido pelo tipo (despesa/receita).
 - **Parcelamento** (ex.: "Notebook 8/10") e **fixos mensais** (aluguel, salário...) gerados automaticamente a cada mês.
 - **Orçamento** por categoria com barra de consumo e "copiar mês anterior".
 - **Relatórios** de 3/6/12 meses.
 - **Compartilhamento**: o casal usa o mesmo espaço via código de convite (trocável); o dono gerencia membros.
+- **Ocultar valores** (o "olhinho" dos apps de banco): borra todos os valores da tela, e a escolha fica salva.
+- **Cara de app**: instalável na tela inicial (ícones, atalhos "Nova despesa/receita"), puxar para atualizar, transições entre telas, barra inferior com vidro e botão central de novo lançamento, tema claro/escuro.
 - **Importar a planilha** `.xlsx` (abas JUL26, AGO26...) direto pelo app, de forma atômica e sem duplicar.
 
 ## Configuração
@@ -39,10 +41,19 @@ Suba o repositório no GitHub, importe na Vercel, adicione `NEXT_PUBLIC_SUPABASE
 |---|---|
 | `npm run check` | lint + tipos + testes + tipos do banco em dia (o mesmo que o CI roda) |
 | `npm test` | testes unitários **e** de banco (Postgres 18 embutido via PGlite, com RLS real) — não precisa de Docker nem de internet |
+| `npm run dev:demo` | sobe o app em **modo demonstração** (veja abaixo): sem Supabase, com dados fictícios |
 | `npm run db:types` | regenera `src/types/database.ts` a partir das migrations |
 | `npm run db:types:check` | falha se esse arquivo estiver desatualizado |
 
 **Mudou o banco?** Crie uma nova migration em `supabase/migrations/` (nunca edite uma já aplicada), rode `npm run db:types` e `npm test`.
+
+## Modo demonstração
+
+`npm run dev:demo` abre o app com um **Postgres embutido** (PGlite) já com as migrations aplicadas e ~7 meses de dados fictícios de um casal ("Lucas" e "Marina"). Serve para ver e testar a interface sem criar um projeto Supabase. As funções SQL reais (RLS, parcelas, relatórios, importação) rodam de verdade; só o login é dispensado.
+
+- Existe **somente em desenvolvimento**: em build de produção `isDemo` vira `false`, o proxy exige login e `/api/demo` responde 404.
+- Os dados ficam em memória e voltam ao estado inicial quando o servidor reinicia.
+- Não toca no seu `.env.local` nem no seu projeto Supabase.
 
 ## Arquitetura
 
@@ -71,4 +82,5 @@ Princípios:
 - Sem Content-Security-Policy (o Next injeta scripts inline; um CSP com nonce está pendente).
 - Sem testes de interface/E2E no navegador; a UI passa por tipos, lint e build, mas ainda não foi exercitada de ponta a ponta contra um Supabase real.
 - Os testes de banco usam PGlite com um stub de `auth.uid()`; não exercitam GoTrue/PostgREST reais.
+- Gestos (deslizar para pagar, puxar para atualizar) só foram exercitados no emulador do navegador, não em um celular físico.
 - Observabilidade: `src/lib/observability.ts` é o ponto de integração (ex.: Sentry); por padrão só loga no console.

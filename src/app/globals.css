@@ -2,40 +2,47 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ───────── Tokens ───────── */
 :root {
-  --bg: #f6f7fb;
+  --bg: #f3f2fa;
   --surface: #ffffff;
-  --surface-2: #f0f2f8;
-  --fg: #0f172a;
-  --muted: #64748b;
-  --border: #e4e7ef;
-  --brand: #4f46e5;
+  --surface-2: #f0eef9;
+  --fg: #15132b;
+  --muted: #6c6a88;
+  --border: #e6e3f3;
+  --brand: #5b3df5;
+  --brand-2: #8f3df0;
   --brand-fg: #ffffff;
-  --brand-soft: #eef0ff;
-  --income: #059669;
-  --income-soft: #e6f7f0;
-  --expense: #e11d48;
-  --expense-soft: #ffeaee;
-  --warn: #d97706;
-  --warn-soft: #fff4e0;
+  --brand-soft: #eeeaff;
+  --income: #0e9f6e;
+  --income-soft: #e3f7ee;
+  --expense: #e5384f;
+  --expense-soft: #ffe9ed;
+  --warn: #d98200;
+  --warn-soft: #fff2d9;
+  --shadow-card: 0 1px 2px rgb(21 19 43 / 0.04), 0 10px 30px -16px rgb(60 40 160 / 0.18);
+  --shadow-float: 0 12px 32px -8px rgb(91 61 245 / 0.45);
   color-scheme: light;
 }
 .dark {
-  --bg: #0b0f1a;
-  --surface: #131929;
-  --surface-2: #1b2236;
-  --fg: #e8ecf5;
-  --muted: #94a3b8;
-  --border: #252d45;
-  --brand: #818cf8;
-  --brand-fg: #0b0f1a;
-  --brand-soft: #1e2347;
-  --income: #34d399;
-  --income-soft: #10281f;
-  --expense: #fb7185;
-  --expense-soft: #301520;
+  --bg: #0b0a16;
+  --surface: #151429;
+  --surface-2: #1e1c3a;
+  --fg: #eceaff;
+  --muted: #9b99c2;
+  --border: #29274d;
+  --brand: #8f7bff;
+  --brand-2: #b36bff;
+  --brand-fg: #0b0a16;
+  --brand-soft: #231f4d;
+  --income: #36d399;
+  --income-soft: #0f2b22;
+  --expense: #ff6b81;
+  --expense-soft: #34141d;
   --warn: #fbbf24;
   --warn-soft: #30230c;
+  --shadow-card: none;
+  --shadow-float: 0 12px 32px -8px rgb(143 123 255 / 0.4);
   color-scheme: dark;
 }
 
@@ -47,6 +54,7 @@
   --color-muted: var(--muted);
   --color-border: var(--border);
   --color-brand: var(--brand);
+  --color-brand-2: var(--brand-2);
   --color-brand-fg: var(--brand-fg);
   --color-brand-soft: var(--brand-soft);
   --color-income: var(--income);
@@ -56,43 +64,80 @@
   --color-warn: var(--warn);
   --color-warn-soft: var(--warn-soft);
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --shadow-card: var(--shadow-card);
 }
 
-html { -webkit-tap-highlight-color: transparent; }
+/* ───────── Base: sensação de app ───────── */
+html { -webkit-tap-highlight-color: transparent; text-size-adjust: 100%; }
 body {
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  overscroll-behavior-y: none;
+  overscroll-behavior-y: contain; /* sem "elástico" que mostra o fundo do navegador */
+  -webkit-font-smoothing: antialiased;
 }
-.tnum { font-variant-numeric: tabular-nums; }
+/* Elementos de interface não são "texto": não selecionam, não abrem menu de pressão longa */
+button, a, nav, header, [role="button"], [role="tab"], label, summary {
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation;
+}
+input, textarea, select { -webkit-touch-callout: default; }
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+::selection { background: color-mix(in oklab, var(--brand) 28%, transparent); }
 
-@keyframes toast-in { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+.tnum { font-variant-numeric: tabular-nums; }
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 0px); }
+.safe-top { padding-top: max(env(safe-area-inset-top), 0px); }
+
+/* Modo "ocultar valores" (olhinho): borra tudo que é dinheiro */
+html.privacy .amt { filter: blur(9px); user-select: none; transition: filter 0.2s; }
+.amt { transition: filter 0.2s; }
+
+/* Vidro (barra inferior / cabeçalho) */
+.glass {
+  background: color-mix(in oklab, var(--surface) 80%, transparent);
+  -webkit-backdrop-filter: saturate(1.6) blur(18px);
+  backdrop-filter: saturate(1.6) blur(18px);
+}
+
+/* Gradiente da marca */
+.brand-gradient { background: linear-gradient(135deg, var(--brand), var(--brand-2)); }
+.danger-gradient { background: linear-gradient(135deg, #e5384f, #a8307f); }
+
+/* ───────── Movimento ───────── */
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
 @keyframes sheet-up { from { transform: translateY(100%); } to { transform: none; } }
-@keyframes sheet-in { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes sheet-in { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: none; } }
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes shimmer { 100% { transform: translateX(100%); } }
+@keyframes page-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes pop { 0% { transform: scale(0.6); } 60% { transform: scale(1.15); } 100% { transform: scale(1); } }
+@keyframes grow-x { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 
-/* Diálogo nativo (<dialog>) como bottom-sheet no mobile e modal no desktop */
+.page-enter { animation: page-in 0.32s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.pop { animation: pop 0.28s ease-out; }
+.grow-x { transform-origin: left; animation: grow-x 0.7s cubic-bezier(0.2, 0.8, 0.2, 1); }
+
+/* ───────── Sheet (<dialog>): bottom-sheet no celular, modal no desktop ───────── */
 dialog.sheet {
   margin: auto auto 0 auto;
   width: 100%;
   max-width: 100%;
-  max-height: 92dvh;
+  max-height: 94dvh;
   border: 0;
   padding: 0;
   background: var(--surface);
   color: var(--fg);
-  border-radius: 1.5rem 1.5rem 0 0;
+  border-radius: 1.75rem 1.75rem 0 0;
   overflow: hidden;
-  animation: sheet-up .25s cubic-bezier(.2,.8,.2,1);
+  animation: sheet-up 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-dialog.sheet::backdrop { background: rgb(2 6 23 / .55); backdrop-filter: blur(2px); animation: fade .2s; }
+dialog.sheet::backdrop { background: rgb(8 6 24 / 0.55); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); animation: fade 0.2s; }
 @media (min-width: 768px) {
-  dialog.sheet { margin: auto; max-width: var(--sheet-w, 32rem); border-radius: 1.5rem; animation: sheet-in .2s ease-out; }
+  dialog.sheet { margin: auto; max-width: var(--sheet-w, 32rem); border-radius: 1.75rem; animation: sheet-in 0.22s ease-out; box-shadow: 0 30px 80px -20px rgb(0 0 0 / 0.45); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, ::before, ::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  *, ::before, ::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
-.safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 0px); }

@@ -1,13 +1,13 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { Check, Minus, Plus, Repeat as RepeatIcon, Trash2 } from "lucide-react";
+import { Check, Minus, Plus, Repeat as RepeatIcon, Trash2, X } from "lucide-react";
 import { useRefs, useTransactions } from "@/hooks/queries";
 import { useDeleteTransaction, useSaveTransaction } from "@/hooks/mutations";
-import { currentMonthKey, monthFirstDay, monthRange, shiftMonth, today } from "@/lib/dates";
+import { addDaysToDate, currentMonthKey, monthFirstDay, monthRange, shiftMonth, today } from "@/lib/dates";
 import { cn } from "@/lib/cn";
 import { money } from "@/lib/format";
-import { CategoryIcon } from "@/lib/icons";
+import { CategoryBadge } from "@/components/finance/category-badge";
 import { planInstallments } from "@/domain/installments";
 import { validateDraft, type Repeat, type TxDraft } from "@/domain/draft";
 import type { Scope } from "@/services/db";
@@ -151,12 +151,44 @@ function TxForm({ opts, onClose }: { opts: OpenOpts; onClose: () => void }) {
     try { return planInstallments({ amountCents, amountIsTotal, total, current }); } catch { return null; }
   }, [repeat, amountCents, amountIsTotal, total, current]);
 
+  const expense = kind === "expense";
+  const tone = expense ? "from-rose-500 to-rose-600" : "from-emerald-500 to-teal-600";
+  const dateChips = [
+    { label: "Hoje", value: today() },
+    { label: "Ontem", value: addDaysToDate(today(), -1) },
+    { label: "Amanhã", value: addDaysToDate(today(), 1) },
+  ];
+
   return (
     <Sheet
       open onClose={onClose} title={editing ? "Editar lançamento" : "Novo lançamento"}
+      top={
+        <div className={cn("bg-gradient-to-br px-5 pb-5 pt-3 text-white transition-colors", tone)}>
+          <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/40 md:hidden" />
+          <div className="flex items-center justify-between gap-3">
+            {editing ? (
+              <h2 className="text-lg font-bold">Editar {expense ? "despesa" : "receita"}</h2>
+            ) : (
+              <div role="tablist" className="flex rounded-full bg-black/15 p-1">
+                {([["expense", "Despesa"], ["income", "Receita"]] as const).map(([k, label]) => (
+                  <button
+                    key={k} type="button" role="tab" aria-selected={kind === k} onClick={() => changeKind(k)}
+                    className={cn("h-9 rounded-full px-5 text-sm font-semibold transition", kind === k ? "bg-white text-fg shadow" : "text-white/85 hover:text-white")}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+            <button onClick={onClose} aria-label="Fechar" className="grid size-9 place-items-center rounded-full bg-black/15 transition hover:bg-black/25"><X className="size-5" /></button>
+          </div>
+          <p className="mt-5 text-sm font-medium text-white/85">{repeat === "installments" && amountIsTotal ? "Valor total" : repeat === "installments" ? "Valor da parcela" : "Valor"}</p>
+          <MoneyInput hero value={amountCents} onChange={setAmountCents} autoFocus={!editing} />
+        </div>
+      }
       footer={
         <div className="space-y-2">
-          {error && <p role="alert" className="rounded-lg bg-expense-soft px-3 py-2 text-sm text-expense">{error}</p>}
+          {error && <p role="alert" className="rounded-xl bg-expense-soft px-3 py-2 text-sm font-medium text-expense">{error}</p>}
           {confirmDel ? (
             <div className="flex items-center gap-2">
               <p className="flex-1 text-sm font-medium">Excluir {isInstallment && scope === "following" ? "esta e as próximas parcelas" : "este lançamento"}?</p>
@@ -166,61 +198,49 @@ function TxForm({ opts, onClose }: { opts: OpenOpts; onClose: () => void }) {
           ) : (
             <div className="flex gap-2">
               {editing && (
-                <Button variant="outline" size="icon" className="size-11 text-expense" aria-label="Excluir" onClick={() => setConfirmDel(true)}>
+                <Button variant="outline" size="icon" className="size-12 rounded-2xl text-expense" aria-label="Excluir" onClick={() => setConfirmDel(true)}>
                   <Trash2 className="size-5" />
                 </Button>
               )}
               {!editing && (
-                <Button variant="soft" className="hidden md:inline-flex" disabled={busy} onClick={() => submit(true)}>Salvar e novo</Button>
+                <Button variant="soft" size="lg" className="hidden rounded-2xl md:inline-flex" disabled={busy} onClick={() => submit(true)}>Salvar e novo</Button>
               )}
-              <Button className="flex-1" size="lg" loading={save.isPending} disabled={busy} onClick={() => submit(false)}>
-                <Check className="size-5" /> Salvar
+              <Button className={cn("flex-1 rounded-2xl text-white", expense ? "!bg-rose-500" : "!bg-emerald-600")} size="lg" loading={save.isPending} disabled={busy} onClick={() => submit(false)}>
+                <Check className="size-5" strokeWidth={3} /> {editing ? "Salvar alterações" : expense ? "Adicionar despesa" : "Adicionar receita"}
               </Button>
             </div>
           )}
         </div>
       }
     >
-      <form className="space-y-4 pt-1" onSubmit={(e) => { e.preventDefault(); submit(false); }}>
-        {!editing && (
-          <Segmented<Kind>
-            value={kind} onChange={changeKind}
-            options={[{ value: "expense", label: "Despesa", tone: "expense" }, { value: "income", label: "Receita", tone: "income" }]}
-          />
-        )}
-
-        <Field label={repeat === "installments" && amountIsTotal ? "Valor total" : "Valor"}>
-          {(id) => <MoneyInput id={id} large value={amountCents} onChange={setAmountCents} autoFocus={!editing} />}
-        </Field>
-
+      <form className="space-y-5 pt-3" onSubmit={(e) => { e.preventDefault(); submit(false); }}>
         <Field label="Descrição">
           {(id) => (
             <>
               <input
                 id={id} list="desc-suggestions" value={description} onChange={(e) => onDescription(e.target.value)}
                 placeholder={kind === "income" ? "Ex.: Salário, Projeto..." : "Ex.: Supermercado, Aluguel..."}
-                className={inputCls} autoComplete="off" enterKeyHint="done" maxLength={200}
+                className={cn(inputCls, "h-12 rounded-2xl text-base")} autoComplete="off" enterKeyHint="done" maxLength={200}
               />
               <datalist id="desc-suggestions">{suggestions.map((s) => <option key={s.id} value={s.description} />)}</datalist>
             </>
           )}
         </Field>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Data">{(id) => <input id={id} type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} />}</Field>
-          <Field label="Conta / cartão">
-            {(id) => (
-              <select id={id} value={accountId ?? ""} onChange={(e) => setAccountId(e.target.value || null)} className={inputCls}>
-                <option value="">Sem conta</option>
-                {refs.accounts.filter((a) => !a.archived).map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
-              </select>
-            )}
-          </Field>
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-muted">Quando</p>
+          <div className="no-scrollbar -mx-5 flex items-center gap-2 overflow-x-auto px-5">
+            {dateChips.map((c) => <Chip key={c.label} active={date === c.value} onClick={() => setDate(c.value)}>{c.label}</Chip>)}
+            <input
+              type="date" value={date} onChange={(e) => setDate(e.target.value)} aria-label="Data"
+              className={cn("h-9 shrink-0 rounded-full border bg-surface px-3 text-sm font-medium", dateChips.some((c) => c.value === date) ? "border-border text-muted" : "border-brand bg-brand-soft text-brand")}
+            />
+          </div>
         </div>
 
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <p className="text-xs font-medium text-muted">Categoria</p>
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+          <div className="grid grid-cols-4 gap-1.5">
             {cats.map((c) => {
               const active = c.id === categoryId;
               return (
@@ -228,13 +248,11 @@ function TxForm({ opts, onClose }: { opts: OpenOpts; onClose: () => void }) {
                   key={c.id} type="button" aria-pressed={active}
                   onClick={() => { setCategoryId(active ? null : c.id); setTouchedCat(true); }}
                   className={cn(
-                    "flex flex-col items-center gap-1.5 rounded-xl border px-1 py-2.5 text-center text-[11px] font-medium leading-tight transition",
-                    active ? "border-brand bg-brand-soft text-brand" : "border-border text-muted hover:text-fg",
+                    "flex flex-col items-center gap-1.5 rounded-2xl border-2 px-1 py-2 text-center text-[11px] font-semibold leading-tight transition active:scale-95",
+                    active ? "border-brand bg-brand-soft text-brand" : "border-transparent text-muted hover:bg-surface-2",
                   )}
                 >
-                  <span className="grid size-8 place-items-center rounded-full text-white" style={{ background: c.color }}>
-                    <CategoryIcon name={c.icon} className="size-4" />
-                  </span>
+                  <CategoryBadge icon={c.icon} color={c.color} size="sm" />
                   <span className="line-clamp-2">{c.name}</span>
                 </button>
               );
@@ -242,23 +260,36 @@ function TxForm({ opts, onClose }: { opts: OpenOpts; onClose: () => void }) {
           </div>
         </div>
 
-        <div className="space-y-1.5">
-          <p className="text-xs font-medium text-muted">Quem?</p>
-          <div className="flex flex-wrap gap-2">
-            {refs.people.filter((p) => !p.archived).map((p) => (
-              <Chip key={p.id} color={p.color} active={p.id === personId} onClick={() => setPersonId(p.id === personId ? null : p.id)}>{p.name}</Chip>
-            ))}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted">Quem?</p>
+            <div className="flex flex-wrap gap-2">
+              {refs.people.filter((p) => !p.archived).map((p) => (
+                <Chip key={p.id} color={p.color} active={p.id === personId} onClick={() => setPersonId(p.id === personId ? null : p.id)}>{p.name}</Chip>
+              ))}
+            </div>
           </div>
+          <Field label="Conta / cartão">
+            {(id) => (
+              <select id={id} value={accountId ?? ""} onChange={(e) => setAccountId(e.target.value || null)} className={cn(inputCls, "rounded-xl")}>
+                <option value="">Sem conta</option>
+                {refs.accounts.filter((a) => !a.archived).map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+              </select>
+            )}
+          </Field>
         </div>
 
-        <div className="flex items-center justify-between rounded-xl bg-surface-2 px-4 py-3">
-          <span className="text-sm font-medium">{doneLabel}</span>
+        <div className="flex items-center justify-between rounded-2xl bg-surface-2 px-4 py-3.5">
+          <span>
+            <span className="block text-sm font-semibold">{doneLabel}</span>
+            <span className="block text-xs text-muted">{done ? (kind === "income" ? "Marcado como recebido" : "Marcado como pago") : "Fica como pendente até você marcar"}</span>
+          </span>
           <Switch checked={done} onChange={setDone} label={doneLabel} />
         </div>
 
         {isInstallment && (
-          <div className="space-y-2 rounded-xl border border-border p-3">
-            <p className="text-sm font-medium">Parcela {editing!.installment_number}/{editing!.installment_total}</p>
+          <div className="space-y-2 rounded-2xl border border-border p-3">
+            <p className="text-sm font-semibold">Parcela {editing!.installment_number}/{editing!.installment_total}</p>
             <Segmented<Scope>
               value={scope} onChange={setScope}
               options={[{ value: "one", label: "Só esta" }, { value: "following", label: "Esta e as próximas" }]}
@@ -274,7 +305,7 @@ function TxForm({ opts, onClose }: { opts: OpenOpts; onClose: () => void }) {
               options={[{ value: "none", label: "Única" }, { value: "installments", label: "Parcelada" }, { value: "monthly", label: "Fixa mensal" }]}
             />
             {repeat === "installments" && (
-              <div className="space-y-3 rounded-xl border border-border p-3">
+              <div className="space-y-3 rounded-2xl border border-border p-3">
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Nº de parcelas">
                     {() => <Stepper value={total} min={2} max={120} onChange={(v) => { setTotal(v); setCurrent((c) => Math.min(c, v)); }} />}
@@ -297,7 +328,7 @@ function TxForm({ opts, onClose }: { opts: OpenOpts; onClose: () => void }) {
               </div>
             )}
             {repeat === "monthly" && (
-              <p className="flex items-start gap-2 rounded-xl bg-brand-soft p-3 text-sm text-brand">
+              <p className="flex items-start gap-2 rounded-2xl bg-brand-soft p-3 text-sm text-brand">
                 <RepeatIcon className="mt-0.5 size-4 shrink-0" />
                 Será lançado todo mês no dia {Number(date.slice(8, 10)) || "—"}. Você pode ajustar o valor de cada mês depois.
               </p>
@@ -306,7 +337,7 @@ function TxForm({ opts, onClose }: { opts: OpenOpts; onClose: () => void }) {
         )}
 
         <Field label="Observação (opcional)">
-          {(id) => <textarea id={id} value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} maxLength={1000} className={cn(inputCls, "h-auto py-2.5")} />}
+          {(id) => <textarea id={id} value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} maxLength={1000} className={cn(inputCls, "h-auto rounded-2xl py-2.5")} />}
         </Field>
         <button type="submit" className="hidden" aria-hidden tabIndex={-1} />
       </form>

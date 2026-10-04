@@ -8,6 +8,9 @@ import { useApp } from "@/components/app-context";
 import { useMembers, useRefs } from "@/hooks/queries";
 import { useEntityMutations, useHouseholdMutations } from "@/hooks/mutations";
 import { ImportSheet } from "@/components/finance/import-sheet";
+import { CategoryBadge } from "@/components/finance/category-badge";
+import { PageHeader } from "@/components/layout/page-header";
+import { InstallCard } from "@/components/install-card";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Field, Segmented, Switch, inputCls } from "@/components/ui/fields";
@@ -40,10 +43,11 @@ export default function ConfigPage() {
   }
 
   return (
-    <div className="space-y-4 md:space-y-6">
-      <header><h1 className="text-xl font-bold md:text-2xl">Configurações</h1><p className="text-sm text-muted">{email}</p></header>
+    <div className="space-y-5 pb-4 md:space-y-6">
+      <PageHeader title="Configurações" subtitle={email} />
 
-      <div className="grid gap-4 md:gap-6 lg:grid-cols-2">
+      <div className="grid gap-5 md:gap-6 lg:grid-cols-2">
+        <InstallCard />
         <Card>
           <CardHeader title="Pessoas" action={<Button size="sm" variant="soft" onClick={() => setEditing({ type: "person", item: { color: COLORS[refs.people.length % COLORS.length] } })}><Plus className="size-4" /> Nova</Button>} />
           <p className="px-4 pt-1 text-xs text-muted md:px-5">Quem aparece no campo “Nome” da planilha. Não precisa ter login.</p>
@@ -70,7 +74,7 @@ export default function ConfigPage() {
             {refs.categories.filter((c) => c.kind === catKind).map((c) => (
               <li key={c.id} className="border-b border-border last:border-0">
                 <Row onClick={() => setEditing({ type: "category", item: c })}
-                  lead={<span className="grid size-8 place-items-center rounded-full text-white" style={{ background: c.color }}><CategoryIcon name={c.icon} className="size-4" /></span>}
+                  lead={<CategoryBadge icon={c.icon} color={c.color} size="sm" />}
                   title={c.name} muted={[c.is_savings && "Conta como guardado", c.archived && "arquivada"].filter(Boolean).join(" · ") || undefined} />
               </li>
             ))}

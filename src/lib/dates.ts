@@ -1,4 +1,4 @@
-import { addMonths, endOfMonth, format, parseISO, startOfMonth } from "date-fns";
+import { addDays, addMonths, endOfMonth, format, parseISO, startOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export const iso = (d: Date) => format(d, "yyyy-MM-dd");
@@ -17,6 +17,11 @@ export const monthLabel = (key: string) => {
   const s = format(monthStart(key), "MMMM 'de' yyyy", { locale: ptBR });
   return s.charAt(0).toUpperCase() + s.slice(1);
 };
+/** "Outubro 2026" (sem o "de"), para botões compactos */
+export const monthLabelCompact = (key: string) => {
+  const s = format(monthStart(key), "MMMM yyyy", { locale: ptBR });
+  return s.charAt(0).toUpperCase() + s.slice(1);
+};
 export const monthShort = (key: string) => format(monthStart(key), "MMM", { locale: ptBR }).replace(".", "");
 export const monthFirstDay = (key: string) => iso(monthStart(key));
 
@@ -27,9 +32,16 @@ export const dayLabel = (isoDate: string) => {
   const diff = Math.round((d.getTime() - parseISO(t).getTime()) / 86400000);
   if (diff === 1) return "Amanhã";
   if (diff === -1) return "Ontem";
-  return format(d, "EEEE, d 'de' MMM", { locale: ptBR });
+  const label = format(d, "EEEE, d 'de' MMM", { locale: ptBR });
+  return label.charAt(0).toUpperCase() + label.slice(1);
+};
+/** { dia: "04", mes: "out" } para o "calendarinho" das listas */
+export const dayParts = (isoDate: string) => {
+  const d = parseISO(isoDate);
+  return { day: format(d, "dd"), month: format(d, "MMM", { locale: ptBR }).replace(".", "") };
 };
 export const shortDate = (isoDate: string) => format(parseISO(isoDate), "dd/MM");
+export const addDaysToDate = (isoDate: string, n: number) => iso(addDays(parseISO(isoDate), n));
 export const addMonthsToDate = (isoDate: string, n: number) => {
   // preserva o dia, limitando ao último dia do mês (31/01 + 1 mês = 28/02)
   const d = parseISO(isoDate);

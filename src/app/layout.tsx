@@ -15,13 +15,13 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f6f7fb" },
-    { media: "(prefers-color-scheme: dark)", color: "#0b0f1a" },
+    { media: "(prefers-color-scheme: light)", color: "#f3f2fa" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b0a16" },
   ],
 };
 
 // Aplica o tema salvo antes da primeira pintura (evita "flash" branco).
-const themeScript = `try{var t=localStorage.getItem('theme');var d=t==='dark'||((!t||t==='system')&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d)}catch(e){}`;
+const themeScript = `try{var t=localStorage.getItem('theme');var d=t==='dark'||((!t||t==='system')&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);if(localStorage.getItem('privacy')==='1')document.documentElement.classList.add('privacy')}catch(e){}`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
